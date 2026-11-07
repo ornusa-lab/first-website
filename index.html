@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>OpenPath – free learning, one path</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2716%27 fill=%27%232563eb%27/%3E%3Cpath d=%27M14 48c14 0 8-16 20-16s6-16 16-16%27 fill=%27none%27 stroke=%27white%27 stroke-width=%278%27 stroke-linecap=%27round%27/%3E%3C/svg%3E">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{background:#f8fafc;color:#0f172a;font-family:Inter,system-ui,sans-serif}
+.card{transition:transform .2s,box-shadow .2s}.card:hover{transform:translateY(-3px);box-shadow:0 10px 25px rgba(15,23,42,.1)}
+.fade{animation:f .3s ease}@keyframes f{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+</style></head>
+<body>
+<header class="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-slate-200">
+<div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+<a href="#home" class="font-bold text-lg text-slate-900 flex items-center gap-2"><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#2563eb"/><path d="M14 48c14 0 8-16 20-16s6-16 16-16" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round"/></svg><span>Open<span class="text-blue-600">Path</span></span></a>
+<nav class="flex gap-1 text-sm overflow-x-auto" id="nav"></nav><div id="auth" class="shrink-0 text-sm"></div></div></header>
+<main id="app" class="max-w-6xl mx-auto px-4 py-8"></main>
+<footer id="ft" class="bg-slate-900 text-slate-300 mt-12"></footer>
+<script>
+// id, name, provider, url, category, level, language, type, free(1)/freemium(0), description
+const R=[
+["cs50","CS50: Introduction to Computer Science","Harvard","https://cs50.harvard.edu/x/","Computer Science","Beginner","English","Course",1,"Harvard’s introduction to computer science and programming, with lectures, problem sets and notes."],
+["cs50p","CS50’s Introduction to Programming with Python","Harvard","https://cs50.harvard.edu/python/","Programming","Beginner","English","Course",1,"A first course in Python programming from the CS50 team."],
+["cs50ai","CS50’s Introduction to AI with Python","Harvard","https://cs50.harvard.edu/ai/","Artificial Intelligence","Intermediate","English","Course",1,"Covers search, machine learning, neural networks and language models in Python."],
+["fcc","freeCodeCamp","freeCodeCamp","https://www.freecodecamp.org/","Programming","Beginner","English","Course",1,"A nonprofit offering free interactive coding curricula and projects."],
+["odin","The Odin Project","The Odin Project","https://www.theodinproject.com/","Programming","Beginner","English","Course",1,"Open-source full-stack web development curriculum."],
+["mitocw","MIT OpenCourseWare","MIT","https://ocw.mit.edu/","Computer Science","Intermediate","English","Course",1,"Free course materials from MIT across engineering, science, math and business."],
+["codecademy","Codecademy","Codecademy","https://www.codecademy.com/","Programming","Beginner","English","Practice",0,"Interactive coding lessons. Some content is free; other content requires a paid plan."],
+["khancomp","Khan Academy Computing","Khan Academy","https://www.khanacademy.org/computing","Computer Science","Beginner","Multilingual","Course",1,"Introductory programming, algorithms and computer science lessons."],
+["gdev","Google for Developers: Learn","Google","https://developers.google.com/learn","Programming","Intermediate","English","Tutorial",1,"Learning pathways and guides for Google technologies and general development."],
+["khan","Khan Academy Math","Khan Academy","https://www.khanacademy.org/math","Mathematics","Beginner","Multilingual","Course",1,"Math from early grades through calculus and statistics, with videos and exercises."],
+["khaneco","Khan Academy Economics & Finance","Khan Academy","https://www.khanacademy.org/economics-finance-domain","Business & Economics","Beginner","Multilingual","Course",1,"Micro and macroeconomics, finance and capital markets lessons."],
+["openstax","OpenStax","Rice University","https://openstax.org/","Science","Intermediate","English","Book",1,"Peer-reviewed free textbooks for science, math, business and more."],
+["phet","PhET Interactive Simulations","University of Colorado Boulder","https://phet.colorado.edu/","Science","Beginner","Multilingual","Practice",1,"Free interactive simulations for physics, chemistry, biology and math."],
+["libretexts","LibreTexts","LibreTexts","https://libretexts.org/","Science","Intermediate","English","Book",1,"Open educational textbooks across STEM and other fields."],
+["ck12","CK-12","CK-12 Foundation","https://www.ck12.org/","Science","Beginner","English","Tutorial",1,"Free K-12 STEM content, simulations and practice."],
+["crash","Crash Course","Crash Course (YouTube)","https://www.youtube.com/@crashcourse","Science","Beginner","English","Video",1,"Short educational video series on science, history and more."],
+["3b1b","3Blue1Brown","Grant Sanderson","https://www.3blue1brown.com/","Mathematics","Intermediate","English","Video",1,"Visual explanations of linear algebra, calculus and other math topics."],
+["pauls","Paul’s Online Math Notes","Lamar University","https://tutorial.math.lamar.edu/","Mathematics","Intermediate","English","Tutorial",1,"Notes and practice problems for algebra, calculus and differential equations."],
+["bbcle","BBC Learning English","BBC","https://www.bbc.co.uk/learningenglish","English Language","Beginner","English","Video",1,"Lessons, videos and podcasts for English learners."],
+["bclearn","LearnEnglish","British Council","https://learnenglish.britishcouncil.org/","English Language","Beginner","English","Course",1,"Grammar, vocabulary, listening and reading practice for adult learners."],
+["duolingo","Duolingo","Duolingo","https://www.duolingo.com/","English Language","Beginner","Multilingual","Practice",0,"Gamified language practice. Has a free tier and optional paid subscription."],
+["openlearn","OpenLearn","The Open University","https://www.open.edu/openlearn/","Business & Economics","Beginner","English","Course",1,"Free short courses and resources from The Open University."],
+["saylor","Saylor Academy","Saylor Academy","https://www.saylor.org/","Business & Economics","Intermediate","English","Course",1,"Free self-paced courses in business, computer science, math and more."],
+["otl","Open Textbook Library","University of Minnesota","https://open.umn.edu/opentextbooks/","Business & Economics","Intermediate","English","Book",1,"A catalogue of open textbooks across many subjects."],
+["coursera","Coursera","Coursera","https://www.coursera.org/","University Preparation","Intermediate","Multilingual","Course",0,"University and industry courses. Many can be audited; certificates and some features are paid."],
+["edx","edX","edX","https://www.edx.org/","University Preparation","Intermediate","Multilingual","Course",0,"University-level courses. Free access options exist; verified certificates are paid."],
+["sat","Khan Academy SAT Prep","Khan Academy","https://www.khanacademy.org/test-prep/sat","University Preparation","Intermediate","English","Practice",1,"Free SAT practice and lessons."],
+["fastai","fast.ai","fast.ai","https://www.fast.ai/","Artificial Intelligence","Intermediate","English","Course",1,"Practical deep learning courses for coders."],
+["mlcc","Machine Learning Crash Course","Google","https://developers.google.com/machine-learning/crash-course","Artificial Intelligence","Beginner","English","Course",1,"Intro to machine learning with lessons and exercises."],
+["elements","Elements of AI","University of Helsinki","https://www.elementsofai.com/","Artificial Intelligence","Beginner","Multilingual","Course",1,"A non-technical introduction to AI concepts."],
+["kaggle","Kaggle Learn","Kaggle","https://www.kaggle.com/learn","Artificial Intelligence","Beginner","English","Practice",1,"Short hands-on lessons in Python, pandas and machine learning."],
+["hf","Hugging Face Learn","Hugging Face","https://huggingface.co/learn","Artificial Intelligence","Intermediate","English","Course",1,"Courses on NLP, LLMs and diffusion models."],
+["mdn","MDN Learn Web Development","Mozilla","https://developer.mozilla.org/en-US/docs/Learn_web_development","Programming","Beginner","English","Tutorial",1,"Reference-quality guides to HTML, CSS and JavaScript."],
+["exercism","Exercism","Exercism","https://exercism.org/","Programming","Beginner","English","Practice",1,"Coding exercises with mentor feedback in dozens of languages."],
+["leetcode","LeetCode","LeetCode","https://leetcode.com/","Computer Science","Advanced","English","Practice",0,"Algorithm practice. Many problems are free; some features require a subscription."],
+["nand","Nand2Tetris","Hebrew University & IDC","https://www.nand2tetris.org/","Computer Science","Advanced","English","Course",1,"Build a computer from logic gates up to a high-level language."],
+["tycs","Teach Yourself Computer Science","teachyourselfcs.com","https://teachyourselfcs.com/","Computer Science","Intermediate","English","Book",1,"A curated list of free-to-find books and courses for core CS topics."]
+].map((a,i)=>({id:a[0],n:a[1],p:a[2],u:a[3],c:a[4],lv:a[5],lg:a[6],t:a[7],f:a[8],d:a[9],pop:i}));
+// ===== SETTINGS: fill in your details (empty contact fields are hidden) =====
+const CFG={name:"Nurdaulet",email:"oryngalinurdaulet44@gmail.com",telegram:"https://t.me/abroadmur"};
+// ===== LANGUAGE LIBRARY: add a resource = add one row =====
+// [id, name, kind('Website'|'YouTube'), subtype, language('Multiple' shows under every language), level, url, free(1)/freemium(0), description]
+const L=[
+["dw","DW Learn German","Website","Free course","German","A1–C1","https://learngerman.dw.com/",1,"Free German courses, videos and exercises from Deutsche Welle."],
+["tv5","TV5MONDE: Learn French","Website","Reading & listening","French","Varies","https://apprendre.tv5monde.com/",1,"Free exercises built around French-language video and audio."],
+["htsk","How to Study Korean","Website","Free course","Korean","Beginner–Intermediate","https://www.howtostudykorean.com/",1,"Free structured Korean grammar lessons."],
+["taekim","Tae Kim’s Guide to Learning Japanese","Website","Grammar","Japanese","Beginner–Intermediate","https://guidetojapanese.org/",1,"A free online Japanese grammar guide."],
+["cgw","Chinese Grammar Wiki","Website","Grammar","Chinese","Beginner–Advanced","https://resources.allsetlearning.com/chinese/grammar/",1,"A free reference of Mandarin grammar points with examples."],
+["lbbc","BBC Learning English","Website","Reading & listening","English","Varies","https://www.bbc.co.uk/learningenglish",1,"Lessons, videos and podcasts for English learners."],
+["lbc","British Council LearnEnglish","Website","Grammar","English","A1–C2","https://learnenglish.britishcouncil.org/",1,"Grammar, vocabulary and skills practice for adult learners."],
+["lduo","Duolingo","Website","Free course","Multiple","Beginner–Intermediate","https://www.duolingo.com/",0,"Gamified lessons in many languages. Free tier plus optional paid plan."],
+["busuu","Busuu","Website","Free course","Multiple","Varies","https://www.busuu.com/",0,"Language courses with a free tier; some features are paid."],
+["memrise","Memrise","Website","Vocabulary","Multiple","Varies","https://www.memrise.com/",0,"Vocabulary and phrase practice. Free and paid tiers."],
+["anki","Anki","Website","Vocabulary","Multiple","All levels","https://apps.ankiweb.net/",1,"Open-source flashcards with spaced repetition. Free on most platforms; the iOS app is paid."],
+["lingq","LingQ","Website","Reading & listening","Multiple","Varies","https://www.lingq.com/",0,"Learn from reading and listening content. Free plan with limits."],
+["reactor","Language Reactor","Website","Reading & listening","Multiple","Varies","https://www.languagereactor.com/",0,"Tools for learning from videos with dual subtitles. Free and paid features."],
+["tandem","Tandem","Website","Language exchange","Multiple","All levels","https://www.tandem.net/",0,"Language exchange with native speakers. Free tier plus paid features."],
+["hellotalk","HelloTalk","Website","Language exchange","Multiple","All levels","https://www.hellotalk.com/",0,"Chat-based language exchange. Free tier plus paid features."],
+["yt-lucy","English with Lucy","YouTube","YouTube channel","English","Varies","https://www.youtube.com/@EnglishwithLucy",1,"English lessons on grammar, vocabulary and pronunciation."],
+["yt-rachel","Rachel’s English","YouTube","YouTube channel","English","Varies","https://www.youtube.com/@rachelsenglish",1,"American English pronunciation and conversation."],
+["yt-bbc","BBC Learning English","YouTube","YouTube channel","English","Varies","https://www.youtube.com/@bbclearningenglish",1,"The BBC’s official English learning channel."],
+["yt-eg","Easy German","YouTube","YouTube channel","German","Varies","https://www.youtube.com/@EasyGerman",1,"Street interviews and real-life German with subtitles."],
+["yt-anja","Learn German with Anja","YouTube","YouTube channel","German","Varies","https://www.youtube.com/@LearnGermanwithAnja",1,"German lessons and tips."],
+["yt-ef","Easy French","YouTube","YouTube channel","French","Varies","https://www.youtube.com/@EasyFrench",1,"Street interviews and real-life French with subtitles."],
+["yt-alexa","Learn French with Alexa","YouTube","YouTube channel","French","Varies","https://www.youtube.com/@learnfrenchwithalexa",1,"French lessons for learners."],
+["yt-ds","Dreaming Spanish","YouTube","YouTube channel","Spanish","Beginner–Advanced","https://www.youtube.com/@DreamingSpanish",1,"Comprehensible-input Spanish videos."],
+["yt-es","Easy Spanish","YouTube","YouTube channel","Spanish","Varies","https://www.youtube.com/@EasySpanish",1,"Street interviews and real-life Spanish with subtitles."],
+["yt-ttmik","Talk To Me In Korean","YouTube","YouTube channel","Korean","Varies","https://www.youtube.com/@TalkToMeInKorean",1,"Korean lessons for all levels."],
+["yt-billy","Learn Korean with GO! Billy Korean","YouTube","YouTube channel","Korean","Varies","https://www.youtube.com/@GoBillyKorean",1,"Korean lessons and conversation practice."],
+["yt-misa","Japanese Ammo with Misa","YouTube","YouTube channel","Japanese","Varies","https://www.youtube.com/@JapaneseAmmoMisa",1,"Japanese lessons and culture."],
+["yt-mc","Mandarin Corner","YouTube","YouTube channel","Chinese","Varies","https://www.youtube.com/@MandarinCorner",1,"Mandarin lessons and listening practice."]
+].map((a,i)=>({id:a[0],n:a[1],k:a[2],st:a[3],lg:a[4],lv:a[5],u:a[6],f:a[7],d:a[8],pop:i}));
+const LANGS=["English","German","French","Spanish","Korean","Japanese","Chinese","Italian","Arabic","Other languages"];
+let LF={q:'',l:'',k:'',s:'pop'};
+const lcard=r=>{const hue=[...r.n].reduce((a,c)=>a+c.charCodeAt(0),0)*7%360;return `<div class="card bg-white rounded-2xl border border-slate-200 p-5 flex flex-col gap-3 shadow-sm"><div class="flex justify-between gap-2"><div class="flex gap-3 items-center"><div class="w-10 h-10 rounded-xl text-white font-bold flex items-center justify-center shrink-0" style="background:hsl(${hue} 55% 38%)">${r.n[0]}</div><div><div class="font-semibold leading-tight">${r.n}</div><div class="text-xs text-slate-500">${r.k==='YouTube'?'YouTube channel':r.st}</div></div></div><span class="text-blue-600">${heart(r)}</span></div><div class="flex flex-wrap gap-1">${badge(r.lg==='Multiple'?'Multiple languages':r.lg,'bg-blue-50 text-blue-700')}${badge(r.lv)}</div><p class="text-sm text-slate-600 flex-1">${r.d}</p><div class="flex items-center justify-between">${accBadge(r)}<a href="${r.u}" target="_blank" rel="noopener" data-open="${r.id}" class="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700">${r.k==='YouTube'?'Watch on YouTube':'Visit website'}</a></div></div>`};
+function languages(){const sel=(k,arr,all)=>`<select data-lf="${k}" class="border border-slate-300 rounded-lg px-3 py-2 bg-white text-sm"><option value="">${all}</option>${arr.map(v=>`<option ${LF[k]===v?'selected':''}>${v}</option>`).join('')}</select>`;
+return `<div class="fade"><h1 class="text-2xl font-bold">Languages</h1><p class="text-slate-600 mt-1 mb-4">Websites and YouTube channels for learning languages for free.</p><div id="chips" class="flex flex-wrap gap-2 mb-4"></div><div class="flex flex-wrap gap-2 mb-4"><input data-lf="q" value="${LF.q}" placeholder="Search languages…" class="border border-slate-300 rounded-lg px-3 py-2 bg-white text-sm flex-1 min-w-[160px]">${sel('k',['Website','YouTube'],'Websites & YouTube')}${sel('st',[...new Set(L.map(r=>r.st))],'All resource types')}<select data-lf="s" class="border border-slate-300 rounded-lg px-3 py-2 bg-white text-sm"><option value="pop">Featured order</option><option value="az" ${LF.s==='az'?'selected':''}>A–Z</option></select></div><div id="lres"></div></div>`}
+function paintLang(){const l=L.filter(r=>(!LF.l||r.lg===LF.l||r.lg==='Multiple')&&(!LF.k||r.k===LF.k)&&(!LF.st||r.st===LF.st)&&(!LF.q||(r.n+r.d+r.lg+r.st).toLowerCase().includes(LF.q.toLowerCase()))).sort((a,b)=>LF.s==='az'?a.n.localeCompare(b.n):a.pop-b.pop);
+$('#chips').innerHTML=['All',...LANGS].map(x=>{const on=(LF.l||'All')===x;return `<button data-lang="${x==='All'?'':x}" class="px-3 py-1.5 rounded-full text-sm border ${on?'bg-slate-900 text-white border-slate-900':'bg-white border-slate-300 text-slate-700'}">${x}</button>`}).join('');
+$('#lres').innerHTML=`<p class="text-sm text-slate-500 mb-3">${l.length} resources${['Italian','Arabic','Other languages'].includes(LF.l)?' · Dedicated entries for this language are still being added; the multi-language tools below cover it.':''}</p>`+grid(l)}
+document.addEventListener('input',e=>{const k=e.target.dataset.lf;if(k){LF[k]=e.target.value;paintLang()}});
+document.addEventListener('click',e=>{const t=e.target.closest('[data-lang]');if(t){LF.l=t.dataset.lang;paintLang()}});
+function ftr(){const y=new Date().getFullYear(),c=[CFG.email&&`<a class="underline" href="mailto:${CFG.email}?subject=OpenPath%20feedback">${CFG.email}</a>`,CFG.telegram&&`<a class="underline" target="_blank" rel="noopener" href="${CFG.telegram}">Telegram</a>`].filter(Boolean);
+$('#ft').innerHTML=`<div class="max-w-6xl mx-auto px-4 py-10 grid gap-8 md:grid-cols-3 text-sm"><div><div class="text-white font-semibold mb-2">About the creator</div><p>OpenPath was created and is developed by <b class="text-white">${CFG.name}</b>, its founder. It is built to help learners find free, high-quality education.</p></div><div><div class="text-white font-semibold mb-2">Mission & vision</div><p><b class="text-white">Mission:</b> make quality education accessible by organizing free learning resources in one place.</p><p class="mt-2"><b class="text-white">Vision:</b> a growing international directory where anyone can learn anything.</p></div><div><div class="text-white font-semibold mb-2">Contact & feedback</div><p>${c.length?'Suggest a resource or report a broken link: '+c.join(' · '):'Contact details will be added soon.'}</p></div></div><div class="border-t border-slate-700 text-xs text-slate-400 px-4 py-5 text-center">Created & Developed by ${CFG.name} · An independent educational project.<br>© ${y} ${CFG.name}. OpenPath links to original providers and does not host their materials; check each site for current pricing.</div>`}
+const CATS=["Computer Science","Programming","Mathematics","Science","English Language","Business & Economics","University Preparation","Artificial Intelligence"];
+const $=s=>document.querySelector(s);
+const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};
+const sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+let favs=ld('fl_fav',[]),recent=ld('fl_rec',[]),last=ld('fl_last',null);
+let F={q:'',c:'',lv:'',lg:'',t:'',s:'pop'};
+const byId=id=>R.find(r=>r.id===id)||L.find(r=>r.id===id);
+const badge=(t,c='bg-slate-100 text-slate-700')=>`<span class="text-xs px-2 py-0.5 rounded-full ${c}">${t}</span>`;
+const accBadge=r=>r.f?badge('Fully free','bg-emerald-100 text-emerald-800'):badge('Free + paid (freemium)','bg-amber-100 text-amber-800');
+const heart=r=>`<button data-fav="${r.id}" class="text-lg leading-none" aria-label="Save">${favs.includes(r.id)?'♥':'♡'}</button>`;
+const card=r=>r.k?lcard(r):`<div class="card bg-white rounded-2xl border border-slate-200 p-5 flex flex-col gap-3 shadow-sm">
+<div class="flex justify-between gap-2"><div class="flex flex-wrap gap-1">${badge(r.c,'bg-blue-50 text-blue-700')}${badge(r.lv)}</div><span class="text-blue-600">${heart(r)}</span></div>
+<a href="#${r.id}" class="font-semibold text-slate-900 hover:text-blue-600">${r.n}</a>
+<div class="text-xs text-slate-500">${r.p} · ${r.t} · ${r.lg}</div>
+<p class="text-sm text-slate-600 flex-1">${r.d}</p>
+<div class="flex items-center justify-between">${accBadge(r)}<a href="${r.u}" target="_blank" rel="noopener" data-open="${r.id}" class="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700">View Resource</a></div></div>`;
+const grid=l=>l.length?`<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">${l.map(card).join('')}</div>`:`<p class="text-slate-500">Nothing here yet.</p>`;
+const h=(t)=>`<h2 class="text-xl font-bold mt-10 mb-4">${t}</h2>`;
+function weekly(){const w=Math.floor(Date.now()/6048e5);return R[w%R.length]}
+function filtered(){let l=R.filter(r=>(!F.c||r.c===F.c)&&(!F.lv||r.lv===F.lv)&&(!F.lg||r.lg===F.lg)&&(!F.t||r.t===F.t)&&(!F.q||(r.n+r.p+r.d+r.c).toLowerCase().includes(F.q.toLowerCase())));
+return l.sort((a,b)=>F.s==='az'?a.n.localeCompare(b.n):a.pop-b.pop)}
+function home(){const f=weekly(),lr=last&&byId(last);
+return `<section class="fade text-center py-10"><svg viewBox="0 0 340 120" class="mx-auto mb-4 w-64 sm:w-80" aria-hidden="true"><path d="M12 100C80 100 60 40 130 40s60 50 120 20 40-40 60-40" fill="none" stroke="#bfdbfe" stroke-width="10" stroke-linecap="round" stroke-dasharray="1 18"/><circle cx="12" cy="100" r="9" fill="#2563eb"/><circle cx="130" cy="40" r="7" fill="#60a5fa"/><circle cx="250" cy="60" r="7" fill="#60a5fa"/><path d="M312 20V-4" stroke="#0f172a" stroke-width="3" stroke-linecap="round" transform="translate(0 14)"/><path d="M312 10l22 8-22 8z" fill="#2563eb"/></svg><h1 class="text-4xl sm:text-5xl font-extrabold text-slate-900">Learn Anything. <span class="text-blue-600">For Free.</span></h1>
+<p class="mt-4 text-slate-600 max-w-2xl mx-auto">Discover thousands of free educational resources and build your future without financial barriers.</p>
+<form id="hs" class="mt-6 max-w-xl mx-auto flex gap-2"><input id="hq" class="flex-1 border border-slate-300 rounded-xl px-4 py-3 bg-white" placeholder="What do you want to learn today?"><button class="bg-slate-900 text-white px-5 rounded-xl">Search</button></form>
+<div class="mt-5 flex gap-3 justify-center flex-wrap"><a href="#explore" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl">Explore Resources</a><a href="#cs50" class="bg-white border border-slate-300 px-5 py-2.5 rounded-xl">Start Learning</a><button id="rnd" class="bg-white border border-slate-300 px-5 py-2.5 rounded-xl">Surprise me</button></div></section>
+<div class="grid grid-cols-3 gap-3 max-w-xl mx-auto mb-2 text-center">${[[R.length+'+','free resources'],[CATS.length,'categories'],['100%','free to learn']].map(x=>`<div class="bg-white border border-slate-200 rounded-2xl py-3"><div class="text-2xl font-extrabold text-blue-600">${x[0]}</div><div class="text-xs text-slate-500">${x[1]}</div></div>`).join('')}</div>
+${lr?`<div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex justify-between items-center gap-3 flex-wrap"><span><b>Continue learning:</b> ${lr.n}</span><a class="text-blue-700 underline" href="${lr.u}" target="_blank" rel="noopener">Resume</a></div>`:''}
+${h('Featured categories')}<div class="grid grid-cols-2 md:grid-cols-4 gap-3">${CATS.map(c=>`<button data-cat="${c}" class="card bg-white border border-slate-200 rounded-2xl p-4 text-left shadow-sm"><div class="font-semibold">${c}</div><div class="text-xs text-slate-500 mt-1">${R.filter(r=>r.c===c).length} resources</div></button>`).join('')}</div>
+${h('Featured resource of the week')}<div class="max-w-md">${card(f)}</div>
+${h('Popular resources')}${grid(R.slice(0,6))}`}
+function explore(){const o=(k,arr,all)=>`<select data-f="${k}" class="border border-slate-300 rounded-lg px-3 py-2 bg-white text-sm"><option value="">${all}</option>${arr.map(v=>`<option ${F[k]===v?'selected':''}>${v}</option>`).join('')}</select>`;
+const u=k=>[...new Set(R.map(r=>r[k]))];
+return `<div class="fade"><h1 class="text-2xl font-bold mb-4">Explore resources</h1>
+<div class="flex flex-wrap gap-2 mb-6"><input data-f="q" value="${F.q}" placeholder="Search…" class="border border-slate-300 rounded-lg px-3 py-2 bg-white text-sm flex-1 min-w-[160px]">
+${o('c',CATS,'All subjects')}${o('lv',['Beginner','Intermediate','Advanced'],'All levels')}${o('lg',u('lg'),'All languages')}${o('t',['Course','Video','Book','Tutorial','Practice'],'All types')}
+<select data-f="s" class="border border-slate-300 rounded-lg px-3 py-2 bg-white text-sm"><option value="pop" ${F.s==='pop'?'selected':''}>Most popular</option><option value="az" ${F.s==='az'?'selected':''}>A–Z</option></select>
+<button id="reset" class="text-sm text-blue-600 px-2">Reset</button></div><div id="res"></div></div>`}
+function paintRes(){const l=filtered();$('#res').innerHTML=`<p class="text-sm text-slate-500 mb-3">${l.length} resources</p>`+grid(l)}
+function detail(r){return `<div class="fade max-w-2xl"><a href="#explore" class="text-sm text-blue-600">← Back</a>
+<div class="bg-white rounded-2xl border border-slate-200 p-6 mt-3 shadow-sm"><div class="flex justify-between items-start gap-2"><div><div class="flex flex-wrap gap-1 mb-2">${badge(r.c,'bg-blue-50 text-blue-700')}${accBadge(r)}</div><h1 class="text-2xl font-bold">${r.n}</h1><div class="text-slate-500">${r.p}</div></div><span class="text-2xl text-blue-600">${heart(r)}</span></div>
+<p class="mt-4 text-slate-700">${r.d}</p>
+<dl class="mt-5 grid grid-cols-2 gap-3 text-sm"><div><dt class="text-slate-500">Difficulty</dt><dd>${r.lv}</dd></div><div><dt class="text-slate-500">Language</dt><dd>${r.lg}</dd></div><div><dt class="text-slate-500">Type</dt><dd>${r.t}</dd></div><div><dt class="text-slate-500">Price</dt><dd>${r.f?'FREE':'Free tier + paid options'}</dd></div><div><dt class="text-slate-500">Duration</dt><dd>See official site</dd></div><div><dt class="text-slate-500">Certificate</dt><dd>See official site</dd></div></dl>
+<p class="mt-4 text-xs text-slate-500">Duration, certificates and pricing change often, so we only show what we can’t get wrong: check the provider for current details.</p>
+<a href="${r.u}" target="_blank" rel="noopener" data-open="${r.id}" class="inline-block mt-5 bg-blue-600 text-white px-5 py-2.5 rounded-xl">Visit official website</a></div></div>`}
+function saved(){const f=favs.map(byId).filter(Boolean),rc=recent.map(byId).filter(Boolean),lr=last&&byId(last);
+return `<div class="fade"><h1 class="text-2xl font-bold">My dashboard</h1><p class="text-sm text-slate-500">Stored in this browser only.</p>
+${lr?h('Continue learning')+`<div class="max-w-md">${card(lr)}</div>`:''}${h('Saved')}${grid(f)}${h('Recently viewed')}${grid(rc)}</div>`}
+function about(){return `<div class="fade max-w-2xl"><h1 class="text-3xl font-bold">About OpenPath</h1>
+<p class="mt-4 text-lg text-slate-700">Education should not depend on how much money you have. OpenPath connects learners with high-quality free educational opportunities from around the world.</p>
+${[['Mission','Make quality education accessible by organizing free learning resources in one place.'],['Vision','A world where anyone with an internet connection can learn anything.'],['Values','Honesty about pricing, links to original providers, no copied materials, and openness to new resources.']].map(a=>`<h2 class="text-xl font-bold mt-8">${a[0]}</h2><p class="text-slate-600 mt-1">${a[1]}</p>`).join('')}</div>`}
+function nav(p){$('#nav').innerHTML=[['home','Home'],['explore','Explore'],['languages','Languages'],['saved','Dashboard'],['about','About']].map(a=>`<a href="#${a[0]}" class="px-3 py-1.5 rounded-lg whitespace-nowrap ${p===a[0]?'bg-blue-50 text-blue-700':'text-slate-600 hover:bg-slate-100'}">${a[1]}</a>`).join('')}
+function route(){const p=location.hash.slice(1)||'home',r=R.find(x=>x.id===p);nav(r?'explore':p);let v;
+if(r){recent=[r.id,...recent.filter(x=>x!==r.id)].slice(0,8);sv('fl_rec',recent);v=detail(r)}
+else v={home,explore,languages,saved,about}[p]?.()||home();
+$('#app').innerHTML=v;window.scrollTo(0,0);if(p==='explore')paintRes();if(p==='languages')paintLang();ftr();
+const hs=$('#hs');if(hs)hs.onsubmit=e=>{e.preventDefault();F={q:$('#hq').value,c:'',lv:'',lg:'',t:'',s:'pop'};location.hash='explore'}}
+document.addEventListener('click',e=>{const t=e.target.closest('[data-fav],[data-open],[data-cat],#rnd,#reset');if(!t)return;
+if(t.dataset.fav){const id=t.dataset.fav;favs=favs.includes(id)?favs.filter(x=>x!==id):[...favs,id];sv('fl_fav',favs);const s=document.documentElement.scrollTop;route();window.scrollTo(0,s)}
+else if(t.dataset.open){last=t.dataset.open;sv('fl_last',last)}
+else if(t.dataset.cat){F={q:'',c:t.dataset.cat,lv:'',lg:'',t:'',s:'pop'};location.hash='explore'}
+else if(t.id==='rnd')location.hash=R[Math.floor(Math.random()*R.length)].id;
+else if(t.id==='reset'){F={q:'',c:'',lv:'',lg:'',t:'',s:'pop'};route()}});
+document.addEventListener('input',e=>{const k=e.target.dataset.f;if(k){F[k]=e.target.value;paintRes()}});
+window.addEventListener('hashchange',route);route();
+
+// ---- Supabase GitHub login ----
+try{
+const sb=window.supabase.createClient('https://letecawnizdgpapvgcnh.supabase.co','sb_publishable_cRnENK4207pBX7EXsqQUYQ_ELlYG-uj',{auth:{flowType:'pkce'}});
+const box=document.getElementById('auth');
+function paintAuth(user){
+ box.textContent='';
+ if(!user){
+  const b=document.createElement('button');
+  b.textContent='Sign in with GitHub';
+  b.className='px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-700';
+  b.onclick=()=>sb.auth.signInWithOAuth({provider:'github',options:{redirectTo:location.origin+location.pathname}});
+  box.appendChild(b);return;
+ }
+ const m=user.user_metadata||{};
+ const wrap=document.createElement('span');wrap.className='flex items-center gap-2';
+ if(m.avatar_url){const i=document.createElement('img');i.src=m.avatar_url;i.alt='';i.className='w-7 h-7 rounded-full';wrap.appendChild(i);}
+ const n=document.createElement('span');n.className='hidden sm:inline text-slate-700';n.textContent=m.user_name||m.name||user.email||'User';wrap.appendChild(n);
+ const o=document.createElement('button');o.textContent='Sign out';o.className='px-2 py-1 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50';
+ o.onclick=()=>sb.auth.signOut();wrap.appendChild(o);box.appendChild(wrap);
+}
+sb.auth.onAuthStateChange((_e,session)=>paintAuth(session?session.user:null));
+sb.auth.getSession().then(({data})=>paintAuth(data.session?data.session.user:null));
+}catch(err){console.error('Supabase init failed',err);}
+</script></body></html>
